@@ -6,9 +6,9 @@
 clear all; close all;
 
 % Time sample [s]
-Ts=10e-3;
+Ts=5e-3;
 % Final time [s]
-Tf=6;
+Tf=8;
 
 a=2;b=0.85;c=0.6;
 % Plant's transfer function - unknown in a real word
@@ -22,7 +22,7 @@ beta=[ tf([1],[1 -1], Ts); tf([1 0],[1 -1], Ts)]
 % input signal - Random
 u1=rand(size(t,2),1);
 m=mean(u1);
-s=std(u1);
+s=1%std(u1);
 u=(u1-m)/s;
 % response of unknown plant to u input
 Y=lsim(G, u, t);
@@ -36,12 +36,14 @@ ul=lsim(L, u, t);
 %plot(T,ul,'-g',T,yl,'-r');figure;
 % rl_t = (1/M) *yl
 %rl=lsim(M,yl, t);
-rl=filter([1 -c], [1-c], yl);
+rl=filter([1 -c], [1 1-c], yl);
+%rl=filter([0 1-c], [1 c], yl);
+yl2=lsim(M,rl, t);
 % entrada do controlador
 el=rl-yl;
 % saida do contolador
 yl;
-plot(t, el);figure;
+plot(t, yl-yl2);figure;
 % modelo do controlador
 teta=[a; b];
 % e entrada u saida do controlador
@@ -61,4 +63,5 @@ teta_r=inv(phy'*phy)*phy'*ul
 
 C=teta_r'*beta;
 
-T=C*G/(1+C*G)
+T=(G*C)/(1+C*G)
+step(M, T)
