@@ -8,7 +8,7 @@ clear all; close all;
 % Sample time
 Ts=5e-3;
 % Final time [s]
-Tf=8;
+Tf=10;
 % Time vector
 t=[0:Ts:Tf];
 

@@ -5,63 +5,59 @@
 %==========================================================================
 clear all; close all;
 
-% Time sample [s]
+% Sample time
 Ts=5e-3;
 % Final time [s]
 Tf=8;
-
-a=2;b=0.85;c=0.6;
-% Plant's transfer function - unknown in a real word
-G=zpk([],[b],a, Ts)
-% M is the desired transfer function in Closed Loop
-M=zpk([],[c],1-c, Ts)
 % Time vector
 t=[0:Ts:Tf];
 
-beta=[ tf([1],[1 -1], Ts); tf([1 0],[1 -1], Ts)]
-% input signal - Random
-u1=rand(size(t,2),1);
-m=mean(u1);
-s=1%std(u1);
-u=(u1-m)/s;
-% response of unknown plant to u input
-Y=lsim(G, u, t);
+% definitions
+a=0.5;
+b=-0.75;
+c=-0.8;
+d=-0.6;
 
+% Plant's transfer function - unknown in a real word
+G=tf([1 a],[1 b], Ts);
+% Controler TF
+C=tf([1 c],[1 d], Ts);
+
+% M is the desired transfer function in Closed Loop
+M=C*G/(C*G+1);
+
+% input signal
+u=square(t)';
+
+% response of unknown plant to u input signal
+y=lsim(G, u, t);
+% get the signal rl whose generate the same yl, but considering M TF.
+W=1/M;
+r=lsim(W, y, t);
+% filter data to reduce polarization e variance error
 % L filter
-L=M*(1-M);
+L=tf([1],[1], Ts)%M*(1-M);
 % yl=L*Y
-yl=lsim(L, Y, t);
+yl=lsim(L, y, t);
 % ul=L*u
 ul=lsim(L, u, t);
-%plot(T,ul,'-g',T,yl,'-r');figure;
-% rl_t = (1/M) *yl
-%rl=lsim(M,yl, t);
-rl=filter([1 -c], [1 1-c], yl);
-%rl=filter([0 1-c], [1 c], yl);
-yl2=lsim(M,rl, t);
-% entrada do controlador
-el=rl-yl;
-% saida do contolador
+
+% Controller input signal
+el=r-yl;
+% Controller output signal
 yl;
-plot(t, yl-yl2);figure;
-% modelo do controlador
-teta=[a; b];
-% e entrada u saida do controlador
-%phy=[e(t); -e(t-1); u(t-1)]
+
+% min square method 
 N=size(t,2);
-n=size(teta, 1);
+n=3;
 phy=zeros(N, n);
-phy=lsim(beta, el, t);
-% for t=2:N
-%     phy(t, 1)=el(t);
-%     phy(t, 2)=-el(t-1);
-%     phy(t, 3)=yl(t-1);
-% end
+for k=2:N
+    phy(k, 1)=el(k);
+    phy(k, 2)=el(k-1);
+    phy(k, 3)=ul(k-1);
+end
+teta=inv(phy'*phy)*phy'*ul;
 
-% make sure, rank(phy) = n :)
-teta_r=inv(phy'*phy)*phy'*ul
-
-C=teta_r'*beta;
-
-T=(G*C)/(1+C*G)
-step(M, T)
+% to be used in graphic plotting
+c=teta(2)
+d=-teta(3)
