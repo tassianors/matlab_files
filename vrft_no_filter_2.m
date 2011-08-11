@@ -3,14 +3,18 @@
 % Tassiano Neuhaus
 % tassianors@gmail.com
 %==========================================================================
-clear all; close all;
+clear all; close all;clc;
 
 % Sample time
-Ts=0.05;
+model.Ts=5e-3;
 % Final time [s]
-Tf=1;
+model.Tf=1;
+model.dim=5;
+model.regr = [0 1 2 1 2];
+model.eul= [1 1 1 0 0];
+
 % Time vector
-t=[0:Ts:Tf];
+t=[0:model.Ts:model.Tf];
 
 % definitions
 kk=980*1.126*1.051;
@@ -21,10 +25,10 @@ cd=0.955;
 
 % Plant's transfer function - unknown in a real word
 Gc=zpk([],[0 -36 -100], 100);
-G=c2d(Gc, Ts);
+G=c2d(Gc, model.Ts);
 % Controler TF
-C=zpk([ca cb],[cc cd], kk, Ts);
-atraso=tf([1],[1 0],Ts);
+C=zpk([ca cb],[cc cd], kk, model.Ts);
+atraso=tf([1],[1 0],model.Ts);
 % M is the desired transfer function in Closed Loop
 M=C*G/(C*G+1);
 
@@ -45,30 +49,17 @@ el=rl-yl;
 % Controller output signal
 yl;
 
-ul_=ul(1:size(ul,1)-1);
-% min square method 
-N=size(t,2)-1;
-n=5;
-phy=zeros(N, n);
-for k=3:N
-    phy(k, 1)=el(k);
-    phy(k, 2)=el(k-1);
-    phy(k, 3)=el(k-2);
-    phy(k, 4)=ul(k-1);
-    phy(k, 5)=ul(k-2);
-end
-teta=inv(phy'*phy)*phy'*ul_
-
+theta=calc_mmq_theta(model, ul,el);
 % to be used in graphic plotting
 step(G);
 figure;
 step(M);
 
--teta(2)/kk
+-theta(2)/kk
 ca+cb
-teta(3)/kk
+theta(3)/kk
 ca*cb
-teta(4)
+theta(4)
 cc+cd
--teta(5)
+-theta(5)
 cc*cd

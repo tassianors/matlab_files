@@ -6,28 +6,25 @@
 clear all; close all;
 
 % Sample time
-Ts=1e-3;
+model.Ts=1e-3;
 % Final time [s]
-Tf=5;
+model.Tf=5;
+model.dim=4;
+model.regr = [1 2 1 2];
+model.eul= [1 1 0 0];
+
 % Time vector
-t=[0:Ts:Tf];
+t=[0:model.Ts:model.Tf];
 
 % definitions
-a=0.6;
-b=0.68;
-c=0.85;
-d=0.7;
-e=0.8;
-
-ca=0.75;
-cb=0.5;
-cc=0.8;
+a=0.6; b=0.68; c=0.85; d=0.7; e=0.8;
+ca=0.75; cb=0.5; cc=0.8;
 
 % Plant's transfer function - unknown in a real word
-G=zpk([a b],[c d e], 1, Ts)
+G=zpk([a b],[c d e], 1, model.Ts)
 % Controler TF
-C=zpk([ca],[cb cc], 1, Ts)
-atraso=tf([1],[1 0 0],Ts);
+C=zpk([ca],[cb cc], 1, model.Ts)
+atraso=tf([1],[1 0 0], model.Ts);
 % M is the desired transfer function in Closed Loop
 M=C*G/(C*G+1);
 
@@ -47,19 +44,7 @@ el=rl-yl;
 yl(size(rl_,1))=0;
 yl;
 
-ul_=ul(1:size(ul,1)-2)
-% min square method 
-N=size(t,2)-2;
-n=4;
-phy=zeros(N, n);
-for k=3:N
-    phy(k, 1)=el(k-1);
-    phy(k, 2)=el(k-2);
-    phy(k, 3)=ul(k-1);
-    phy(k, 4)=ul(k-2);
-end
-teta=inv(phy'*phy)*phy'*ul_
-
+teta=calc_mmq_theta(model, ul,el);
 % to be used in graphic plotting
 a=teta(2)
 d=-teta(3)

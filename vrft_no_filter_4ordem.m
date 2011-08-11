@@ -6,11 +6,15 @@
 clear all; close all;
 
 % Sample time
-Ts=1e-4;
+model.Ts=1e-4;
 % Final time [s]
-Tf=1;
+model.Tf=1;
+model.dim=5;
+model.regr = [0 1 2 1 2];
+model.eul= [1 1 1 0 0];
+
 % Time vector
-t=[0:Ts:Tf];
+t=[0:model.Ts:model.Tf];
 
 % definitions
 a=0.6;
@@ -25,9 +29,9 @@ cc=1;
 cd=0.8;
 
 % Plant's transfer function - unknown in a real word
-G=zpk([a b],[c d e], 1, Ts)
+G=zpk([a b],[c d e], 1, model.Ts)
 % Controler TF
-C=zpk([ca cb],[cc cd], 1, Ts)
+C=zpk([ca cb],[cc cd], 1, model.Ts)
 atraso=tf([1],[1 0],Ts);
 % M is the desired transfer function in Closed Loop
 M=C*G/(C*G+1);
@@ -48,21 +52,7 @@ el=rl-yl;
 % Controller output signal
 yl;
 
-
-ul_=ul(1:size(ul,1)-1);
-% min square method 
-N=size(t,2)-1;
-n=5;
-phy=zeros(N, n);
-for k=3:N
-    phy(k, 1)=el(k);
-    phy(k, 2)=el(k-1);
-    phy(k, 3)=el(k-2);
-    phy(k, 4)=ul(k-1);
-    phy(k, 5)=ul(k-2);
-end
-teta=inv(phy'*phy)*phy'*ul_
-
+theta=calc_mmq_theta(model, ul,el);
 % to be used in graphic plotting
 step(G);
 figure;

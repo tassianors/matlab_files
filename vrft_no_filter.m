@@ -39,7 +39,7 @@ rl=lsim(W, yl, t);
 % Controller input signal
 el=rl-yl;
 
-teta=calc_mmq_teta(model, ul,el)
+teta=calc_mmq_theta(model, ul,el)
 % to be used in graphic plotting
 c=teta(2)
 d=-teta(3)
